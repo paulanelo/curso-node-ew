@@ -4,6 +4,10 @@
  * 2. Obter endereço do usuário pelo id 
 	*/
 
+const util = require('util');
+
+const getAddressAsync = util.promisify(getAddress);
+
 function getUser() {
 	// quando der algum problema, chama-se o reject
 	// se for sucesso, chama-se o resolve
@@ -29,15 +33,13 @@ function getTelephone(userId) {
 	});
 }
 
-function getAddress(userId) {
-	return new Promise((resolve, reject) => {
-		setTimeout(() => {
-			return resolve({
-				rua: 'dos cravos',
-				numero: 0,
-			})
-		}, 3000);
-	});
+function getAddress(userId, callback) {
+	setTimeout(() => {
+		return callback(null, {
+			rua: 'dos cravos',
+			numero: 0,
+		})
+	}, 3000);
 }
 
 const userPromisse = getUser();
@@ -50,11 +52,23 @@ userPromisse
 			.then(res => {
 				return {
 					usuario: user,
-					telephone: res,
+					telefone: res,
 				};
 			})
 	})
-	.then(res => console.log('resultado:', res))
+	.then(res => {
+		const address = getAddressAsync(res.usuario.id);
+		return address.then(resAddress => {
+			return {
+				...res,
+				endereco: resAddress
+			}
+		})
+	})
+	.then(res => console.log(`
+	Nome: ${res.usuario.name}
+	Endereço: ${res.endereco.rua}, n° ${res.endereco.numero}
+	Telefone: (${res.telefone.ddd}) ${res.telefone.telephone}`))
 	.catch(err => console.log('error:', err));
 
 // getUser(function userResolve(error, user) {
